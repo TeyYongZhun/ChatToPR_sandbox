@@ -1,1 +1,6 @@
-Hello ChatToPR sandbox
+Hey team 👋 — production API is returning 503s on `/v2/orders`. Started about 20 minutes ago. Ticket #4821.
+Confirmed. Looks like the order-service pod is OOMKilled. I see a spike in memory after the 10:10 deploy.
+That deploy included the new pagination logic from PR #312. Memory usage wasn't flagged in staging because the dataset was too small.
+Root cause: the cursor-based pagination is loading entire result sets into memory instead of streaming. Fix is straightforward — swap `toArray()` for an async iterator in `OrderRepository.findAll()`.
+Rolling back #312 now to restore service. Marcos, can you open a hotfix PR with the streaming fix and add a load test so this doesn't slip through staging again?
+On it. Will target `main` with the fix + a Jest memory-leak test. Give me 30 min.
